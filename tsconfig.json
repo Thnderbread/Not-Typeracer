@@ -3,7 +3,6 @@
     // Enable latest features
     "lib": [
       "ESNext",
-      "DOM"
     ],
     "target": "ESNext",
     "module": "ESNext",
@@ -20,6 +19,6 @@
     // Some stricter flags (disabled by default)
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
-  }
+    "noPropertyAccessFromIndexSignature": false,
+  },
 }

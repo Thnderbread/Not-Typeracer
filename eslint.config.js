@@ -2,12 +2,12 @@ import globals from "globals"
 import tseslint from "typescript-eslint"
 import typescriptParser from "@typescript-eslint/parser"
 import eslintPluginPrettier from "eslint-plugin-prettier"
-import html from "@html-eslint/eslint-plugin"
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
   ...tseslint.configs.recommended,
   {
+    files: ["**/*.ts"],
     plugins: {
       prettier: eslintPluginPrettier,
     },
@@ -60,12 +60,5 @@ export default [
       },
       globals: globals.node,
     },
-  },
-  {
-    ignores: ["*.html"],
-  },
-  {
-    ...html.configs["flat/recommended"],
-    files: ["**/*.html"],
   },
 ]
