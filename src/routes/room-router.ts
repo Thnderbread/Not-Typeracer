@@ -1,63 +1,73 @@
-import { v4 as uuid } from "uuid";
+import clsx from "clsx/lite";
+import RoomDao from "../helpers/roomDao";
 import redisClient from "../config/RedisClient";
+import setUserState from "../helpers/setUserState";
 import { Router, type Request, type Response } from "express";
-import type { IGame, IPlayer } from "../interfaces/game-interface";
+import type { IGame, IPlayer } from "../types/game-interface";
 
-const redis =
-  process.env.NODE_ENV === "prod" ? redisClient : new Map<string, string>();
+const roomDao = new RoomDao(
+  process.env.NODE_ENV === "prod" ? redisClient : undefined
+);
 
 const router: Router = Router();
 
 router.post("/create", async (req: Request, res: Response) => {
-  // also client side create button should be disabled??
+  console.log("Create ept hit");
+  let playerId = req.playerId;
+
   if (req.roomId) {
     console.log("The player is currently in a room.");
-    // html response here for htmx on the client??
-    return res.status(400).json({ message: "You're currently in a room." });
-  } else if (!req.playerId) {
-    const playerId = uuid();
-    res.cookie("_player", playerId, {
-      secure: false,
-      httpOnly: true,
-      sameSite: "strict",
-    });
-    req.playerId = playerId;
+
+    res.setHeader("HX-Retarget", "#error");
+    res.setHeader("HX-Reswap", "innerHTML");
+
+    return res
+      .status(422)
+      .send(
+        `<p class=${clsx("rounded-md border bg-pink-200 text-red-400")}>The player is currently in a room.</p>`
+      );
+  } else if (!playerId) {
+    playerId = setUserState(req, res, "playerId");
   }
 
-  const id = uuid();
-  const roomId = id;
-  res.cookie("_room", roomId, {
-    secure: false,
-    httpOnly: true,
-    sameSite: "strict",
-  });
+  const roomId = setUserState(req, res, "roomId");
+  const chars = playerId.split("-");
+  const playerSuffix = chars[chars.length - 1];
 
-  const { playerId } = req;
   const host: IPlayer = {
+    name: `Guest-${playerSuffix}`,
     client: undefined,
     progress: 0,
     host: true,
     playerId,
   };
-  const game: IGame = { started: false, players: [host] };
-  await redis.set(roomId, JSON.stringify(game));
-  const stuff = await redis.get(roomId);
-  console.log(stuff);
+  const text = `Lorem, ipsum dolor sit amet consectetur adipisicing elit. Quibusdam earum nihil doloremque saepe ipsum iusto, velit sequi facere! Dolor in numquam iure odit ipsam omnis eligendi, reprehenderit ipsum libero ex.`;
+  const game: IGame = {
+    text,
+    started: false,
+    players: [host],
+    link: `/api/rooms/${roomId}`,
+  };
+  await roomDao.setRoom(roomId, game);
+
   // TODO: Get a text for the race. Maybe render it directly here?
-  // TODO: Also need a link for this room. Render it directly here?
-  return res.status(201);
-  // .render("the created stuff");
+  // TODO: Also need a link for this room. Render it directly here? Maybe some host specific string to stop random people from joining?
+  return res.render("partials/room", {
+    players: host,
+    text: game.text,
+    link: game.link,
+  });
 });
 
-// middleware for extracting room id and player id
 router.post("/join/:roomId", async (req: Request, res: Response) => {
   const roomId = req.params["roomId"];
+  let playerId = req.playerId;
+
   if (!roomId) {
     console.log(`No room id: ${roomId}`);
     return res.sendStatus(400);
   }
 
-  // const cookies = req.cookies;
   if (req.roomId) {
     // remove this player from redis
     // need to? they'll be disconnected from the websocket when leaving the page
@@ -65,38 +75,41 @@ router.post("/join/:roomId", async (req: Request, res: Response) => {
     return;
   }
 
-  if (!req.playerId) {
-    console.log(`There's no player id: ${req.playerId}`);
-    return;
-  }
+  if (!playerId) playerId = setUserState(req, res, "playerId");
 
-  const roomExists = await redis.get(roomId);
-  if (!roomExists) {
+  const game = await roomDao.getRoom(roomId);
+  if (!game) {
     console.log("room not found.");
     return res.status(404);
     // .render("room not found");
   }
-  const game: IGame = JSON.parse(roomExists);
 
   // also check if the race has started? probably set some started variable or something
-  // find the number of players currently in the room; ignore the "started" property
   if (game.players.length === 4) {
     console.log("room is full.");
     return res.status(500);
     // .render("room is full.");
   }
 
+  const chars = playerId.split("-");
+  const playerSuffix = chars[chars.length - 1];
+
   const newPlayer: IPlayer = {
     host: false,
     progress: 0,
     client: undefined,
-    playerId: req.playerId,
+    playerId: playerId,
+    name: `Guest-${playerSuffix}`,
   };
   game.players.push(newPlayer);
 
-  await redis.set(roomId, JSON.stringify(game));
-  return res.status(201);
-  // .render("new display for each player");
+  setUserState(req, res, "roomId", roomId);
+  await roomDao.setRoom(roomId, game);
+  return res.render("partials/room", {
+    players: game.players,
+    text: game.text,
+    link: game.link,
+  });
 });
 
 router.post("/start/:roomId", async (req: Request, res: Response) => {
@@ -107,13 +120,12 @@ router.post("/start/:roomId", async (req: Request, res: Response) => {
   }
 
   // if the given user id is not in the room
-  const roomData = await redis.get(req.roomId);
-  if (!roomData) {
+  const room = await roomDao.getRoom(req.roomId);
+  if (!room) {
     return res.status(400);
     // .render("sumn went wrong");
   }
 
-  const room: IGame = JSON.parse(roomData);
   const foundPlayer = room.players.find(
     (player) => player.playerId === req.playerId
   );
@@ -127,7 +139,7 @@ router.post("/start/:roomId", async (req: Request, res: Response) => {
 
   room.started = true;
   console.log("Found the player & started the game.");
-  await redis.set(req.roomId, JSON.stringify(room));
+  await roomDao.setRoom(req.roomId, room);
   return res.status(200);
   // host client needs to contact websocket to start the game?
 });

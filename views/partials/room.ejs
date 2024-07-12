@@ -1,0 +1,36 @@
+<script src="https://cdn.tailwindcss.com"></script>
+<div id="room" class="rounded-md border-2 border-solid border-black bg-cyan-300 p-4 w-8/12 h-fit m-auto mt-14">
+  <!-- alpine here for state for each player? htmx sets this up? -->
+  <% if (player.host) { %>
+    <button id="copyLinkButton" <%=players.length===4 ? 'disabled' : '' %> data-link="<%= joinLink %>">Copy invite
+        link</button>
+    <!-- hx get here to disable the button maybe? pure js for the onclick? -->
+    <button id="startButton">Start!</button>
+    <% } %>
+      <div id="progress-container" class="border-2 border-solid border-red-600">
+        <br>
+        <% players.forEach(player=> { %>
+          <span id=<%=player.name %>>
+            <%= player.name %>
+          </span>
+          <span><img src="" alt="the img"></span>
+          <br>
+          <hr class="border-t-4 border-dashed border-yellow-300">
+          <br>
+          <% }) %>
+
+      </div>
+      <div id="text-container" class="border-2 border-solid border-blue-400 p-2" id="text">
+        <p class="justify-center text-lg border-2 border-red-400 flex p-1">
+          <%= text %>
+        </p>
+      </div>
+</div>
+<script>
+  function copyJoinLinkToClipboard() {
+    const linkButton = document.getElementById("copyLinkButton")
+    const inviteLink = linkButton.getAttribute("data-link");
+    navigator.clipboard.writeText(inviteLink);
+    alert("The invite link has been copied to the clipboard.");
+  }
+</script>

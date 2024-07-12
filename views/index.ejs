@@ -15,6 +15,25 @@
 <body>
   <h1>Hello</h1>
   <p>test</p>
+  <div id="main">
+    <div id="error"></div>
+    <button class="rounded-md border-2 border-solid border-gray-700" hx-post="/api/rooms/create" hx-target="#main"
+      hx-swap="outerHTML" hx-trigger="click" hx-debug="true">
+      Create room
+    </button>
+    <div id="room">
+    </div>
+  </div>
 </body>
+<script>
+  document.addEventListener("DOMContentLoaded", (event) => {
+    document.body.addEventListener("htmx:beforeSwap", (e) => {
+      if (e.detail.xhr.status === 422) {
+        e.detail.shouldSwap = true;
+        e.detail.isError = false;
+      }
+    })
+  })
+</script>
 
 </html>

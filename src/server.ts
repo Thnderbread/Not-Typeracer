@@ -1,26 +1,20 @@
 import http from "http";
 import sock from "sockjs";
-import MainRouter from "./routes/room-router";
-import { v4 as uuid } from "uuid";
+import express from "express";
+import MainRouter from "./routes";
 import wssHandler from "./wssHandler";
 import cookieParser from "cookie-parser";
-import express, { type Response } from "express";
+import getReqInfo from "./middleware/getReqInfo";
 
+// ? How to handle user leaving room mid-race (erasing the roomId cookie)
+// ? WS somehow needs to contact rest api to check. Maybe rest api could look at redis and see if user is still in that room?
 const app = express();
 app.use(cookieParser());
-app.use("/api", MainRouter);
 app.set("view engine", "ejs");
 app.use(express.static("public"));
 
-app.get("/", (_, res: Response) => {
-  res.cookie("_player", uuid(), {
-    secure: false,
-    httpOnly: true,
-    sameSite: "strict",
-  });
-  res.render("index");
-  res.end;
-});
+app.use("/", getReqInfo, MainRouter);
+app.use("/api", getReqInfo, MainRouter);
 
 const wss = sock.createServer();
 const server = http.createServer(app);

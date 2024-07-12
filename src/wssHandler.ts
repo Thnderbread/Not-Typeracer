@@ -1,5 +1,5 @@
 import type { Connection } from "sockjs";
-import type { IPlayer } from "./interfaces/game-interface";
+import type { IPlayer } from "./types/game-interface";
 
 // Move to config file
 const PLAYER_LIMIT = 4;

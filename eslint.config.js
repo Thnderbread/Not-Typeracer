@@ -1,11 +1,14 @@
-import globals from "globals"
-import tseslint from "typescript-eslint"
+import globals from "globals";
+import tseslint from "typescript-eslint";
+import tailwind from "eslint-plugin-tailwindcss";
 import typescriptParser from "@typescript-eslint/parser"
-import eslintPluginPrettier from "eslint-plugin-prettier"
+import eslintPluginPrettier from "eslint-plugin-prettier";
+import angularParser from "@angular-eslint/template-parser";
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
   ...tseslint.configs.recommended,
+  ...tailwind.configs["flat/recommended"],
   {
     files: ["**/*.ts"],
     plugins: {
@@ -40,12 +43,12 @@ export default [
         "error",
         {
           semi: true,
-          singleQuote: false,
-          trailingComma: "es5",
           tabWidth: 2,
           printWidth: 80,
-          arrowParens: "always",
           endOfLine: "auto",
+          singleQuote: false,
+          trailingComma: "es5",
+          arrowParens: "always",
         },
       ],
     },
@@ -61,4 +64,10 @@ export default [
       globals: globals.node,
     },
   },
+  {
+    files: ["**/*.ejs"],
+    languageOptions: {
+      parser: angularParser
+    },
+  }
 ]
