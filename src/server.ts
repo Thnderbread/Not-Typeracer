@@ -1,8 +1,8 @@
 import http from "http";
-import sock from "sockjs";
+import WebSocket from "ws";
 import express from "express";
 import MainRouter from "./routes";
-import wssHandler from "./wssHandler";
+// import wssHandler from "./wssHandler";
 import cookieParser from "cookie-parser";
 import getReqInfo from "./middleware/getReqInfo";
 
@@ -13,16 +13,20 @@ app.use(cookieParser());
 app.set("view engine", "ejs");
 app.use(express.static("public"));
 
-app.use("/", getReqInfo, MainRouter);
+app.use("/", MainRouter);
 app.use("/api", getReqInfo, MainRouter);
 
-const wss = sock.createServer();
+const wss = new WebSocket.Server({ port: 8080 });
+wss.on("connection", (ws) => {
+  console.log(`Received connection!: ${ws.url}`);
+  ws.onmessage = (e) => {
+    const message = e.data as Buffer;
+    console.log(`Received a message: ${message.toString()}`);
+    ws.send("Ho!");
+  };
+});
 const server = http.createServer(app);
-wss.installHandlers(server, { prefix: "/ws" });
-
-wss.on("connection", wssHandler);
-
-server.listen(8000, "0.0.0.0", console.log);
+server.listen(8000, "127.0.0.1", console.log);
 // the medium article guy who uses go should be my example
 // need to find some way to manage games in a stateless way
 // look when root is hit send a user id
