@@ -1,13 +1,8 @@
 import clsx from "clsx/lite";
 import RoomDao from "../helpers/roomDao";
-import redisClient from "../config/RedisClient";
 import setUserState from "../helpers/setUserState";
 import { Router, type Request, type Response } from "express";
 import type { IGame, IPlayer } from "../types/game-interface";
-
-const roomDao = new RoomDao(
-  process.env.NODE_ENV === "prod" ? redisClient : undefined
-);
 
 const router: Router = Router();
 
@@ -35,6 +30,7 @@ router.post("/create", async (req: Request, res: Response) => {
   const playerSuffix = chars[chars.length - 1];
 
   const host: IPlayer = {
+    avatar: "./assets/icons/rocket-1.png",
     name: `Guest-${playerSuffix}`,
     client: undefined,
     progress: 0,
@@ -46,49 +42,48 @@ router.post("/create", async (req: Request, res: Response) => {
     text,
     started: false,
     players: [host],
-    link: `/api/rooms/${roomId}`,
+    joinLink: `?room=${roomId}`,
   };
-  await roomDao.setRoom(roomId, game);
+  await RoomDao.setRoom(roomId, game);
 
   // TODO: Get a text for the race. Maybe render it directly here?
   // TODO: Also need a link for this room. Render it directly here? Maybe some host specific string to stop random people from joining?
   return res.render("partials/room", {
-    players: host,
+    joinLink: game.joinLink,
+    players: game.players,
+    currentPlayer: host,
     text: game.text,
-    link: game.link,
   });
 });
 
 router.post("/join/:roomId", async (req: Request, res: Response) => {
+  const { playerId } = req;
   const roomId = req.params["roomId"];
-  let playerId = req.playerId;
 
-  if (!roomId) {
-    console.log(`No room id: ${roomId}`);
+  if (!roomId || !playerId) {
+    console.log(
+      `Either no room id: ${roomId} or no player id: ${playerId}. Unable to complete the request.`
+    );
     return res.sendStatus(400);
   }
 
-  if (req.roomId) {
-    // remove this player from redis
-    // need to? they'll be disconnected from the websocket when leaving the page
-    console.log("User in a room already.");
-    return;
-  }
-
-  if (!playerId) playerId = setUserState(req, res, "playerId");
-
-  const game = await roomDao.getRoom(roomId);
+  const game = await RoomDao.getRoom(roomId);
   if (!game) {
     console.log("room not found.");
-    return res.status(404);
+    return res.sendStatus(404);
     // .render("room not found");
   }
 
   // also check if the race has started? probably set some started variable or something
   if (game.players.length === 4) {
     console.log("room is full.");
-    return res.status(500);
+    return res.sendStatus(422);
     // .render("room is full.");
+  }
+
+  if (game.started) {
+    console.log("Game is already in progress.");
+    return res.sendStatus(422);
   }
 
   const chars = playerId.split("-");
@@ -100,27 +95,29 @@ router.post("/join/:roomId", async (req: Request, res: Response) => {
     client: undefined,
     playerId: playerId,
     name: `Guest-${playerSuffix}`,
+    avatar: `./assets/icons/rocket-${game.players.length + 1}.png`,
   };
   game.players.push(newPlayer);
 
   setUserState(req, res, "roomId", roomId);
-  await roomDao.setRoom(roomId, game);
+  await RoomDao.setRoom(roomId, game);
+
   return res.render("partials/room", {
+    currentPlayer: newPlayer,
+    joinLink: game.joinLink,
     players: game.players,
     text: game.text,
-    link: game.link,
   });
 });
 
 router.post("/start/:roomId", async (req: Request, res: Response) => {
-  // if these values were not given
   if (!req.playerId || !req.roomId) {
-    return res.status(401);
+    return res.status(400);
     // .render("idk some error msg, render html or sumn");
   }
 
   // if the given user id is not in the room
-  const room = await roomDao.getRoom(req.roomId);
+  const room = await RoomDao.getRoom(req.roomId);
   if (!room) {
     return res.status(400);
     // .render("sumn went wrong");
@@ -139,11 +136,15 @@ router.post("/start/:roomId", async (req: Request, res: Response) => {
 
   room.started = true;
   console.log("Found the player & started the game.");
-  await roomDao.setRoom(req.roomId, room);
+  await RoomDao.setRoom(req.roomId, room);
   return res.status(200);
-  // host client needs to contact websocket to start the game?
 });
 
 export default router;
 
+// const BadResponses = {
+//   400: "Oops! Couldn't complete that request.",
+//   404: "Couldn't find the requested resource.",
+//   422: "The room you're trying to join may be full or in a race already.",
+// };
 // TODO: This is looking kinda nasty, as of now the user will have to hit /start, client will receive response, then hit ws, ws will have to map each id to thing, then respond to client, client will start the game and send updates

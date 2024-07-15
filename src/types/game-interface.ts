@@ -11,13 +11,15 @@ export interface IPlayer {
   host: boolean;
   /** Name for the player */
   name: string;
+  /** Link to avatar the player will use */
+  avatar: string;
 }
 
 export interface IGame {
   /** Text used for the race */
   text: string;
   /** The link to join this game */
-  link: string;
+  joinLink: string;
   /** Whether the race has started */
   started: boolean;
   /** All players in the room */
