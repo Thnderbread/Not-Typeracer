@@ -4,7 +4,7 @@ import IndexRouter from "./index-router";
 
 const router: Router = Router();
 
-router.use("", IndexRouter);
+router.use("/", IndexRouter);
 router.use("/rooms", RoomsRouter);
 
 export default router;
