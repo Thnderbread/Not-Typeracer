@@ -1,10 +1,10 @@
-import type { Redis } from "ioredis";
 import RedisClient from "../config/RedisClient";
 import type { IGame } from "../types/game-interface";
+import { type Redis as RedisType, Redis } from "ioredis";
 
 class RoomDao {
-  conn: Redis | Map<string, string>;
-  constructor(conn?: Redis) {
+  conn: RedisType | Map<string, string>;
+  constructor(conn?: RedisType) {
     this.conn = conn ? conn : new Map<string, string>();
   }
 
@@ -15,19 +15,21 @@ class RoomDao {
 
   async getRoom(roomId: string): Promise<IGame | undefined> {
     const room = await this.conn.get(roomId);
-    if (!room) {
-      return undefined;
-    }
+    if (!room) return undefined;
     const game: IGame = JSON.parse(room);
     return game;
   }
+
+  async destroyRoom(roomId: string): Promise<void> {
+    this.conn instanceof Redis
+      ? await this.conn.del(roomId)
+      : this.conn.delete(roomId);
+  }
 }
 
-const dao = new RoomDao(
+export default new RoomDao(
   process.env.NODE_ENV === "prod" ? RedisClient : undefined
 );
-
-export default dao;
 
 // rocket-1 thing: <a href="https://www.flaticon.com/free-icons/space-shuttle" title="space shuttle icons">Space shuttle icons created by Radhe Icon - Flaticon</a>
 // rocket-2: <a href="https://www.flaticon.com/free-icons/rocket" title="rocket icons">Rocket icons created by Freepik - Flaticon</a>

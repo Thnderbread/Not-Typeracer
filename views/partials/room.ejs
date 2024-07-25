@@ -48,18 +48,21 @@
 </script>
 <script>
   // htmx.logAll()
-  socket = io();
+  socket = io({
+    reconnection: false
+  });
 
   const roomId = "<%= joinLink %>".split("=")[1]
 
   socket.on("connect", () => {
     socket.emit("join", {
       roomId,
-      player: "<%= currentPlayer.name %>"
+      host: "<%= currentPlayer.host %>",
+      playerId: "<%= currentPlayer.playerId %>",
     });
   });
 
-  socket.on("joined", (player) => {
+  socket.on("roomChange", (player) => {
     htmx.ajax("GET", `/api/rooms/${roomId}`, {
       target: "#room",
       swap: "outerHTML"
