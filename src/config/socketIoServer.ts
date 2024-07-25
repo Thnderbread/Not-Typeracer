@@ -1,4 +1,4 @@
-import RoomDao from "./helpers/roomDao";
+import RoomDao from "../helpers/roomDao";
 import { type Server as httpServer } from "http";
 import { Server as SocketIoServer } from "socket.io";
 import type {
@@ -6,7 +6,7 @@ import type {
   ServerToClientEvents,
   InterServerEvents,
   SocketData,
-} from "./types/socketio-types";
+} from "../types/socketio-types";
 
 function initSocketIoServer(httpServer: httpServer) {
   const io = new SocketIoServer<
@@ -58,6 +58,29 @@ function initSocketIoServer(httpServer: httpServer) {
 
       io.to(roomId).emit("roomChange");
       console.log(`Socket disconnected: ${reason}`);
+    });
+
+    socket.on("startGame", async () => {
+      if (!socket.data.host) {
+        console.warn("Start attempt by non-host player denied.");
+        return;
+      }
+
+      const { roomId } = socket.data;
+      const game = await RoomDao.getRoom(roomId);
+
+      if (!game) {
+        console.warn("Could not find the game the user requested.");
+        return;
+      }
+
+      if (game.started) {
+        console.warn("Attempt to start a game that is already in progress.");
+        return;
+      }
+
+      const startTime = Date.now() + 10_000;
+      io.to(roomId).emit("gameStarted", startTime);
     });
   });
 

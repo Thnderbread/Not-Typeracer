@@ -2,8 +2,8 @@ import express from "express";
 import MainRouter from "./routes";
 import { createServer } from "http";
 import cookieParser from "cookie-parser";
-import initSocketIoServer from "./wssHandler";
 import getReqInfo from "./middleware/getReqInfo";
+import initSocketIoServer from "./config/socketIoServer";
 
 /**
  * Work on updating display for host on ws connection

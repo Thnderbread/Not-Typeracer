@@ -32,7 +32,6 @@ router.post("/create", async (req: Request, res: Response) => {
   const host: IPlayer = {
     avatar: "./assets/icons/rocket-1.png",
     name: `Guest-${playerSuffix}`,
-    client: undefined,
     progress: 0,
     host: true,
     playerId,
@@ -123,7 +122,6 @@ router.post("/join/:roomId", async (req: Request, res: Response) => {
   const newPlayer: IPlayer = {
     host: false,
     progress: 0,
-    client: undefined,
     playerId: playerId,
     name: `Guest-${playerSuffix}`,
     avatar: `./assets/icons/rocket-${game.players.length + 1}.png`,
@@ -143,18 +141,25 @@ router.post("/join/:roomId", async (req: Request, res: Response) => {
   });
 });
 
-router.post("/start/:roomId", async (req: Request, res: Response) => {
+router.post("/:roomId/start", async (req: Request, res: Response) => {
+  /**
+   * Host hits start
+   * set started = true
+   * set start time
+   * let client know of start time
+   * respond to host with disabled button
+   * also respond with new html that contains game logic?
+   * * or, once client knows start time, emit something to each player
+   * * then once that event is received, ask api for new html with game logic
+   */
   if (!req.playerId || !req.roomId) {
-    return res.status(400);
+    return res.sendStatus(400);
     // .render("idk some error msg, render html or sumn");
   }
 
   // if the given user id is not in the room
   const room = await RoomDao.getRoom(req.roomId);
-  if (!room) {
-    return res.status(400);
-    // .render("sumn went wrong");
-  }
+  if (!room) return res.sendStatus(400); // .render("sumn went wrong");
 
   const foundPlayer = room.players.find(
     (player) => player.playerId === req.playerId
@@ -163,14 +168,14 @@ router.post("/start/:roomId", async (req: Request, res: Response) => {
   if (!foundPlayer || !foundPlayer.host) {
     console.log("Either couldn't find the player in this room: ", room.players);
     console.log("Or this player is not the host: ");
-    return res.status(400);
+    return res.sendStatus(400);
     // .render("sumn went wrong");
   }
 
   room.started = true;
   console.log("Found the player & started the game.");
   await RoomDao.setRoom(req.roomId, room);
-  return res.status(200);
+  return res.sendStatus(200);
 });
 
 export default router;
