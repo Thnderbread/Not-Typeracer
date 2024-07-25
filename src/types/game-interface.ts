@@ -1,8 +1,4 @@
-import { type Connection } from "sockjs";
-
 export interface IPlayer {
-  /** Sock.js connection */
-  client?: Connection;
   /** Player's unique id */
   playerId: string;
   /** Progress made in the race */

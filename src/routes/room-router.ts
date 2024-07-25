@@ -56,6 +56,37 @@ router.post("/create", async (req: Request, res: Response) => {
   });
 });
 
+router.get("/:roomId", async (req: Request, res: Response) => {
+  const { roomId, playerId } = req;
+
+  if (!roomId || !playerId) {
+    console.warn(`Missing room: ${roomId} id or player id: ${playerId}`);
+    return res.sendStatus(400);
+  }
+
+  const game = await RoomDao.getRoom(roomId);
+  if (!game) {
+    console.log("room not found.");
+    return res.sendStatus(404);
+  }
+
+  const currentPlayer = game.players.find(
+    (player) => player.playerId === playerId
+  );
+
+  if (!currentPlayer) {
+    console.log("Player not found: ", playerId);
+    return res.sendStatus(404);
+  }
+
+  return res.render("partials/room", {
+    joinLink: game.joinLink,
+    players: game.players,
+    text: game.text,
+    currentPlayer,
+  });
+});
+
 router.post("/join/:roomId", async (req: Request, res: Response) => {
   const { playerId } = req;
   const roomId = req.params["roomId"];
@@ -103,9 +134,11 @@ router.post("/join/:roomId", async (req: Request, res: Response) => {
   await RoomDao.setRoom(roomId, game);
 
   return res.render("partials/room", {
+    // make sure the most recently joined player
+    // is at the front for rendering
+    players: game.players.reverse(),
     currentPlayer: newPlayer,
     joinLink: game.joinLink,
-    players: game.players,
     text: game.text,
   });
 });

@@ -1,19 +1,18 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <div id="room" class="m-auto mt-14 h-fit w-8/12 rounded-md border-2 border-solid border-black bg-gray-800 p-4">
-  <!-- alpine here for state for each player? might need to be done server side -->
   <% if (currentPlayer.host) { %>
   <div class="flex flex-row justify-between">
     <button class="border rounded-lg p-1 mb-1 bg-blue-600 text-white" id="copyLinkButton" onclick="copyJoinLinkToClipboard()" <%= players.length === 4 ? "disabled" : "" %> data-link="<%= joinLink %>">Copy Invite Link
     </button>
-    <!-- button needs to be disabled on start -->
+    <!-- ! button needs to be disabled on start -->
     <button class="border rounded-lg p-1 mb-1 min-w-2 bg-blue-600 text-white" id="startButton">Start!
     </button>
   </div>
   <% } %>
-  <div hx-ext="ws" ws-connect="http://localhost:8080/ws" id="progress-container" class="border-2 border-solid rounded-md border-violet-800 mt-2 p-2">
-    <button class="border rounded-lg p-1 mb-1 min-w-2 bg-blue-600 text-white" ws-send>Websocket!</button>
+  <div id="progressContainer" class="border-2 border-solid rounded-md border-violet-800 mt-2 p-2">
+    <button class="border rounded-lg p-1 mb-1 min-w-2 bg-blue-600 text-white">Websocket!</button>
     <% players.forEach(player=> { %>
-    <span class="text-white" id="<%=player.name %>">
+    <span class="<%= player.name === currentPlayer.name ? 'text-green-200' : 'text-white' %>" id="<%=player.name %>">
       <%= player.name %>
     </span>
     <span><img width="30" height="30" src="<%= player.avatar %>" alt="avatar"></span>
@@ -21,7 +20,7 @@
     <hr class="border-t-4 border-dashed border-yellow-300">
     <br>
     <% }) %>
-    <div id="text-container" class="p-2">
+    <div id="textContainer" class="p-2">
       <p class="justify-center text-lg text-white flex p-1">
         <%= text %>
       </p>
@@ -30,26 +29,40 @@
 </div>
 <script>
   function copyJoinLinkToClipboard() {
-    const linkButton = document.getElementById("copyLinkButton");
-    const inviteLink = linkButton.getAttribute("data-link");
+    const inviteLink = "<%= joinLink %>"
     navigator.clipboard.writeText(window.location.href + inviteLink);
 
+    const linkButton = document.getElementById("copyLinkButton");
     const oldText = linkButton.textContent;
     linkButton.textContent = "Copied!";
+    linkButton.setAttribute("disabled", true);
     linkButton.classList.replace("bg-blue-600", "bg-green-600");
-    linkButton.disabled = true;
 
     const revert = setTimeout(() => {
-      linkButton.disabled = false;
       linkButton.textContent = oldText;
+      linkButton.setAttribute("disabled", false);
       linkButton.classList.replace("bg-green-600", "bg-blue-600");
       clearTimeout(revert);
     }, 1500);
   }
 </script>
 <script>
-  htmx.logAll()
-  document.body.addEventListener("htmx:wsConfigSend", (evt) => {
-    evt.detail.parameters["progress"] = 0
+  // htmx.logAll()
+  socket = io();
+
+  const roomId = "<%= joinLink %>".split("=")[1]
+
+  socket.on("connect", () => {
+    socket.emit("join", {
+      roomId,
+      player: "<%= currentPlayer.name %>"
+    });
+  });
+
+  socket.on("joined", (player) => {
+    htmx.ajax("GET", `/api/rooms/${roomId}`, {
+      target: "#room",
+      swap: "outerHTML"
+    });
   });
 </script>
