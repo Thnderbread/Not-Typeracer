@@ -37,7 +37,7 @@ export interface JoinEventData {
 export interface IncomingProgressData {
   /** Room the player belongs to. */
   roomId: string;
-  /** The player's current progress level. */
+  /** The player's current progress level, expressed as a percent of the entire text. */
   progress: number;
 }
 
