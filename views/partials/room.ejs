@@ -1,71 +1,12 @@
-<script src="https://cdn.tailwindcss.com"></script>
-<div id="room" class="m-auto mt-14 h-fit w-8/12 rounded-md border-2 border-solid border-black bg-gray-800 p-4">
+<script src="../scripts/socketHandlers.js"></script>
+<div id="room" data-roomId="<%= joinLink.split("=")[1] %>" class="m-auto mt-14 h-fit w-8/12 rounded-md border-2 border-solid border-black bg-gray-800 p-4">
   <% if (currentPlayer.host) { %>
   <div class="flex flex-row justify-between">
-    <button class="border rounded-lg p-1 mb-1 bg-blue-600 text-white" id="copyLinkButton" onclick="copyJoinLinkToClipboard()" <%= players.length === 4 ? "disabled" : "" %> data-link="<%= joinLink %>">Copy Invite Link
+    <button class="border rounded-lg p-1 mb-1 bg-blue-600 text-white" id="copyLinkButton" onclick="copyJoinLinkToClipboard('<%= joinLink %>')" <%= players.length === 4 ? "disabled" : "" %> data-link="<%= joinLink %>">Copy Invite Link
     </button>
-    <!-- ! button needs to be disabled on start -->
-    <button class="border rounded-lg p-1 mb-1 min-w-2 bg-blue-600 text-white" id="startButton">Start!
+    <button class="border rounded-lg p-1 mb-1 min-w-2 bg-blue-600 text-white" onclick="startGame()" id="startButton">Start!
     </button>
   </div>
   <% } %>
-  <div id="progressContainer" class="border-2 border-solid rounded-md border-violet-800 mt-2 p-2">
-    <button class="border rounded-lg p-1 mb-1 min-w-2 bg-blue-600 text-white">Websocket!</button>
-    <% players.forEach(player=> { %>
-    <span class="<%= player.name === currentPlayer.name ? 'text-green-200' : 'text-white' %>" id="<%=player.name %>">
-      <%= player.name %>
-    </span>
-    <span><img width="30" height="30" src="<%= player.avatar %>" alt="avatar"></span>
-    <br>
-    <hr class="border-t-4 border-dashed border-yellow-300">
-    <br>
-    <% }) %>
-    <div id="textContainer" class="p-2">
-      <p class="justify-center text-lg text-white flex p-1">
-        <%= text %>
-      </p>
-    </div>
-  </div>
+  <%- include('player-container.ejs') %>
 </div>
-<script>
-  function copyJoinLinkToClipboard() {
-    const inviteLink = "<%= joinLink %>"
-    navigator.clipboard.writeText(window.location.href + inviteLink);
-
-    const linkButton = document.getElementById("copyLinkButton");
-    const oldText = linkButton.textContent;
-    linkButton.textContent = "Copied!";
-    linkButton.setAttribute("disabled", true);
-    linkButton.classList.replace("bg-blue-600", "bg-green-600");
-
-    const revert = setTimeout(() => {
-      linkButton.textContent = oldText;
-      linkButton.setAttribute("disabled", false);
-      linkButton.classList.replace("bg-green-600", "bg-blue-600");
-      clearTimeout(revert);
-    }, 1500);
-  }
-</script>
-<script>
-  // htmx.logAll()
-  socket = io({
-    reconnection: false
-  });
-
-  const roomId = "<%= joinLink %>".split("=")[1]
-
-  socket.on("connect", () => {
-    socket.emit("join", {
-      roomId,
-      host: "<%= currentPlayer.host %>",
-      playerId: "<%= currentPlayer.playerId %>",
-    });
-  });
-
-  socket.on("roomChange", (player) => {
-    htmx.ajax("GET", `/api/rooms/${roomId}`, {
-      target: "#room",
-      swap: "outerHTML"
-    });
-  });
-</script>

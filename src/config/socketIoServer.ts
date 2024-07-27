@@ -1,6 +1,11 @@
-import RoomDao from "../helpers/roomDao";
 import { type Server as httpServer } from "http";
 import { Server as SocketIoServer } from "socket.io";
+import {
+  handleSocketIncomingProgress,
+  handleSocketDisconnect,
+  handleSocketStartGame,
+  handleSocketJoin,
+} from "./socketIoHandlers";
 import type {
   ClientToServerEvents,
   ServerToClientEvents,
@@ -17,70 +22,21 @@ function initSocketIoServer(httpServer: httpServer) {
   >(httpServer);
 
   io.on("connection", (socket) => {
-    socket.on("join", (joinData) => {
-      socket.data.roomId = joinData.roomId;
-      socket.data.host = joinData.playerIsHost;
-      socket.data.playerId = joinData.playerId;
+    socket.on("join", handleSocketJoin.bind(socket));
+    socket.on("incomingProgress", handleSocketIncomingProgress.bind(socket));
 
-      // console.log(`Someone joined: ${JSON.stringify(joinData)}`);
-      socket.join(joinData.roomId);
-      socket.to(joinData.roomId).emit("roomChange", joinData.playerId);
-    });
-
-    // send new progress level to all users
-    socket.on("incomingProgress", (progressData) => {
-      const { playerId } = socket.data;
-      const { progress } = progressData;
-
-      socket
-        .to(progressData.roomId)
-        .emit("outgoingProgress", { playerId, progress });
-    });
-
-    // remove user from the room on disconnect
     socket.on("disconnect", async (reason) => {
-      const { roomId } = socket.data;
-      const game = await RoomDao.getRoom(roomId);
+      const roomId = await handleSocketDisconnect.call(socket);
 
-      if (!game) {
-        console.warn("Couldn't find the game with this user.");
-        return;
-      }
-
-      game.players = game.players.filter(
-        (player) => player.playerId !== socket.data.playerId
-      );
-
-      // destroy the room if no one is left in it
-      game.players.length === 0
-        ? await RoomDao.destroyRoom(roomId)
-        : await RoomDao.setRoom(roomId, game);
-
-      io.to(roomId).emit("roomChange");
+      roomId && io.to(roomId).emit("roomChange");
       console.log(`Socket disconnected: ${reason}`);
     });
 
     socket.on("startGame", async () => {
-      if (!socket.data.host) {
-        console.warn("Start attempt by non-host player denied.");
-        return;
-      }
-
-      const { roomId } = socket.data;
-      const game = await RoomDao.getRoom(roomId);
-
-      if (!game) {
-        console.warn("Could not find the game the user requested.");
-        return;
-      }
-
-      if (game.started) {
-        console.warn("Attempt to start a game that is already in progress.");
-        return;
-      }
+      const roomId = await handleSocketStartGame.call(socket);
 
       const startTime = Date.now() + 10_000;
-      io.to(roomId).emit("gameStarted", startTime);
+      roomId && io.to(roomId).emit("gameStarted", startTime);
     });
   });
 

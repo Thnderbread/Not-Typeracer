@@ -1,0 +1,18 @@
+<div hidden id="playerDetails" data-host="<%= currentPlayer.host %>" data-playerId="<%= currentPlayer.playerId %>"></div>
+<div id="progressContainer" class="border-2 border-solid rounded-md border-violet-800 mt-2 p-2">
+  <button class="border rounded-lg p-1 mb-1 min-w-2 bg-blue-600 text-white">Websocket!</button>
+  <% players.forEach(player=> { %>
+  <span class="<%= player.name === currentPlayer.name ? 'text-green-200' : 'text-white' %>" id="<%=player.name %>">
+    <%= player.name %>
+  </span>
+  <span><img width="30" height="30" src="<%= player.avatar %>" alt="avatar"></span>
+  <br>
+  <hr class="border-t-4 border-dashed border-yellow-300">
+  <br>
+  <% }) %>
+  <div id="textContainer" class="p-2">
+    <p class="justify-center text-lg text-white flex p-1">
+      <%= text %>
+    </p>
+  </div>
+</div>

@@ -1,3 +1,5 @@
+import type { Socket } from "socket.io";
+
 export interface SocketData {
   host: boolean;
   roomId: string;
@@ -5,6 +7,8 @@ export interface SocketData {
 }
 
 export interface ClientToServerEvents {
+  /** Triggered when the host attempts to start the game. */
+  startGame: () => Promise<void>;
   /** Triggered when a player joins the websocket server. */
   join: (data: JoinEventData) => void;
   /** Triggered when a player sends their progress level to the websocket server. */
@@ -14,6 +18,8 @@ export interface ClientToServerEvents {
 export interface ServerToClientEvents {
   /** Fired when a player joins or leaves a room. */
   roomChange: (player?: string) => void;
+  /** Fired when the game has been started. */
+  gameStarted: (startTime: number) => void;
   /** Fired when sending a player's progress level to other clients. */
   outgoingProgress: (data: OutgoingProgressData) => void;
 }
@@ -21,14 +27,14 @@ export interface ServerToClientEvents {
 /** Required for correct types on the SocketIoServer & Socket objects. */
 export interface InterServerEvents {}
 
-interface JoinEventData {
+export interface JoinEventData {
   roomId: string;
   playerId: string;
   playerIsHost: boolean;
 }
 
 /** Information from a player about their progress. */
-interface IncomingProgressData {
+export interface IncomingProgressData {
   /** Room the player belongs to. */
   roomId: string;
   /** The player's current progress level. */
@@ -42,3 +48,10 @@ export interface OutgoingProgressData {
   /** The player's current progress level. */
   progress: number;
 }
+
+export type SocketType = Socket<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  InterServerEvents,
+  SocketData
+>;
