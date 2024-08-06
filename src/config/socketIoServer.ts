@@ -4,8 +4,8 @@ import {
   handleSocketIncomingProgress,
   handleSocketDisconnect,
   handleSocketStartGame,
-  handleSocketJoin,
-} from "./socketIoHandlers";
+  handlePlayerJoin,
+} from "../helpers/socketIoHandlers";
 import type {
   ClientToServerEvents,
   ServerToClientEvents,
@@ -22,7 +22,7 @@ function initSocketIoServer(httpServer: httpServer) {
   >(httpServer);
 
   io.on("connection", (socket) => {
-    socket.on("join", handleSocketJoin.bind(socket));
+    socket.on("join", handlePlayerJoin.bind(socket));
     socket.on("incomingProgress", async (progressData) => {
       const info = await handleSocketIncomingProgress.call(
         socket,

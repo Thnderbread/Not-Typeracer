@@ -1,4 +1,4 @@
-import RoomDao from "../helpers/roomDao";
+import RoomDao from "./roomDao";
 import type {
   IncomingProgressData,
   JoinEventData,
@@ -6,8 +6,8 @@ import type {
   SocketType,
 } from "../types/socketio-types";
 
-/** Handler for a socket joining a room, NOT a connection joining the server. */
-export function handleSocketJoin(this: SocketType, joinData: JoinEventData) {
+/** Handler for a player / socket joining a room, NOT a connection joining the server. */
+export function handlePlayerJoin(this: SocketType, joinData: JoinEventData) {
   this.data.host = joinData.host;
   this.data.roomId = joinData.roomId;
   this.data.playerId = joinData.playerId;

@@ -13,6 +13,7 @@
     "Retarget",
     "socketio",
     "sockjs",
-    "typeracer"
+    "typeracer",
+    "typeracerdata"
   ]
 }

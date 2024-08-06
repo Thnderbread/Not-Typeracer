@@ -2,6 +2,7 @@ import RoomDao from "../helpers/roomDao";
 import setUserState from "../helpers/setUserState";
 import { Router, type Request, type Response } from "express";
 import type { IGame, IPlayer } from "../types/game-interface";
+import getRandomText from "../helpers/getRandomText";
 
 const router: Router = Router();
 
@@ -28,7 +29,7 @@ router.post("/create", async (req: Request, res: Response) => {
     host: true,
     playerId,
   };
-  const text = "The text of the game is the game of the text!";
+  const text = getRandomText();
   const game: IGame = {
     text,
     finished: 0,
