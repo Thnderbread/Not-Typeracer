@@ -1,6 +1,5 @@
+# Fkn ngrok
 FROM oven/bun:alpine
-
-ENV NODE_ENV=dev
 
 WORKDIR /app
 
@@ -13,6 +12,6 @@ COPY ./src ./src
 
 RUN bun install --production
 
-EXPOSE 8000
+ENV NODE_ENV=dev
 
 CMD [ "bun", "dev" ]

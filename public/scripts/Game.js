@@ -1,8 +1,6 @@
 import gameCompletedEvent from "./Events/gameCompleted.js";
 
 let textIdx = 0;
-/** The point in pixels where it appears a user has reached the end */
-const finishLinePosition = 465
 const text = document.getElementById("gameText").getAttribute("data-text").trim();
 
 /**
@@ -118,7 +116,15 @@ function showPlayerFinish(place) {
  * @returns {number}
  */
 function calculatePlayerAdvance(progressLevel) {
-  return progressLevel < 100 ? finishLinePosition * progressLevel : finishLinePosition
+  /**
+   * Number that puts player right at the end when
+   * subtracted from the progress container's client width.
+   * i suck so idk why but it works
+   */
+  const offset = 150
+  const progressContainer = document.getElementById("progressContainer");
+  const finishLinePosition = progressContainer.clientWidth - offset;
+  return progressLevel < 100 ? finishLinePosition * progressLevel : finishLinePosition;
 }
 
 /**

@@ -32,6 +32,9 @@
     "start": "NODE_ENV=prod && bun run ./src/server.ts",
     "dev": "NODE_ENV=dev && bun --watch ./src/server.ts",
     "lint": "bunx eslint .",
-    "lint:fix": "bunx eslint . --fix"
+    "lint:fix": "bunx eslint . --fix",
+    "docker:build": "docker build -t nottyperacer .",
+    "docker:run": "docker run -it -p 8000:8000 nottyperacer",
+    "docker:rb": "bun docker:build && bun docker:run"
   }
 }
