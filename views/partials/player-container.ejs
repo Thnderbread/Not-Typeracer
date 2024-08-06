@@ -1,18 +1,38 @@
 <div hidden id="playerDetails" data-host="<%= currentPlayer.host %>" data-playerId="<%= currentPlayer.playerId %>"></div>
 <div id="progressContainer" class="border-2 border-solid rounded-md border-violet-800 mt-2 p-2">
-  <button class="border rounded-lg p-1 mb-1 min-w-2 bg-blue-600 text-white">Websocket!</button>
   <% players.forEach(player=> { %>
-  <span class="<%= player.name === currentPlayer.name ? 'text-green-200' : 'text-white' %>" id="<%=player.name %>">
-    <%= player.name %>
-  </span>
-  <span><img width="30" height="30" src="<%= player.avatar %>" alt="avatar"></span>
+  <div id="<%= player.playerId %>" class="max-w-36 text-center">
+    <span class="block text-center"><img width="30" height="30" class="pt-0.5 pl-0.5 ml-auto mr-auto" src="<%= player.avatar %>" alt="avatar"></span>
+    <p id="<%= player.playerId %>-wpm" class="text-xs text-center">WPM: 0</p>
+    <span class="<%= player.name === currentPlayer.name ? 'text-green-200' : 'text-white' %> text-sm text-center" id="<%=player.name %>">
+      <%= player.name %>
+    </span>
+  </div>
   <br>
   <hr class="border-t-4 border-dashed border-yellow-300">
   <br>
   <% }) %>
+  <div id="textboxContainer" class="flex items-center px-2 py-1 mb-1">
+    <input autofocus autocomplete="off" type="text" id="textbox" class="border-4 rounded-md border-solid border-white p-2 my-0 mx-auto w-full" placeholder="Get ready..." disabled>
+  </div>
   <div id="textContainer" class="p-2">
-    <p class="justify-center text-lg text-white flex p-1">
-      <%= text %>
-    </p>
+    <span id="completed" class="text-green-400 opacity-80 text-lg"></span>
+    <span id="nextLetter" class="text-lg underline"><%= text[0] %></span>
+    <span id="gameText" data-text="<%= text %>" class="justify-center text-lg text-white"><%= text.substring(1) %><span />
   </div>
 </div>
+<script type="module">
+  import {
+    handleGameStart,
+    handleKeyPress
+  } from "../scripts/Game.js"
+  const textbox = document.getElementById("textbox");
+  textbox.addEventListener("gameStart", handleGameStart);
+  textbox.addEventListener("keydown", (e) => {
+    const nextLetterEl = document.getElementById("nextLetter");
+    const completedEl = document.getElementById("completed");
+    const textAreaEl = document.getElementById("gameText");
+
+    handleKeyPress(e, nextLetterEl, completedEl, textAreaEl);
+  });
+</script>

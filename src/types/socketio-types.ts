@@ -21,16 +21,16 @@ export interface ServerToClientEvents {
   /** Fired when the game has been started. */
   gameStarted: (startTime: number) => void;
   /** Fired when sending a player's progress level to other clients. */
-  outgoingProgress: (data: OutgoingProgressData) => void;
+  progressUpdate: (data: OutgoingProgressData) => void;
 }
 
 /** Required for correct types on the SocketIoServer & Socket objects. */
 export interface InterServerEvents {}
 
 export interface JoinEventData {
+  host: boolean;
   roomId: string;
   playerId: string;
-  playerIsHost: boolean;
 }
 
 /** Information from a player about their progress. */
@@ -39,6 +39,8 @@ export interface IncomingProgressData {
   roomId: string;
   /** The player's current progress level, expressed as a percent of the entire text. */
   progress: number;
+  /** The player's wpm. */
+  wpm: number;
 }
 
 /** Information to be sent to all members about a player's progress. */
@@ -47,6 +49,10 @@ export interface OutgoingProgressData {
   playerId: string;
   /** The player's current progress level. */
   progress: number;
+  /** How many players have finished, if any. */
+  finished?: number;
+  /** The player's wpm. */
+  wpm: number;
 }
 
 export type SocketType = Socket<

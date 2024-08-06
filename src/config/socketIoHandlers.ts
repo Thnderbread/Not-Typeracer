@@ -2,29 +2,44 @@ import RoomDao from "../helpers/roomDao";
 import type {
   IncomingProgressData,
   JoinEventData,
+  OutgoingProgressData,
   SocketType,
 } from "../types/socketio-types";
 
 /** Handler for a socket joining a room, NOT a connection joining the server. */
 export function handleSocketJoin(this: SocketType, joinData: JoinEventData) {
+  this.data.host = joinData.host;
   this.data.roomId = joinData.roomId;
-  this.data.host = joinData.playerIsHost;
   this.data.playerId = joinData.playerId;
 
-  console.log(`Someone joined: ${JSON.stringify(joinData)}`);
   this.join(joinData.roomId);
   this.to(joinData.roomId).emit("roomChange", joinData.playerId);
 }
 
 /** Handler for incoming progress data from a socket. */
-export function handleSocketIncomingProgress(
+export async function handleSocketIncomingProgress(
   this: SocketType,
   progressData: IncomingProgressData
-) {
+): Promise<OutgoingProgressData | undefined> {
   const { playerId } = this.data;
-  const { progress } = progressData;
+  const { progress, roomId, wpm } = progressData;
 
-  this.to(progressData.roomId).emit("outgoingProgress", { playerId, progress });
+  const game = await RoomDao.getRoom(roomId);
+  if (!game) {
+    console.warn("Couldn't find game for this user.");
+    return;
+  }
+  if (progress === 100) {
+    game.finished += 1;
+    await RoomDao.setRoom(roomId, game);
+  }
+
+  return {
+    finished: game.finished,
+    playerId,
+    progress,
+    wpm,
+  };
 }
 
 /** Handler for a socket that is disconnected.
@@ -52,8 +67,8 @@ export async function handleSocketDisconnect(this: SocketType) {
   return roomId;
 }
 
-/** Handler for a request to start the game.
- *
+/**
+ *  Handler for a request to start the game.
  * @returns the roomId to which the socket belongs for further processing.
  */
 export async function handleSocketStartGame(this: SocketType) {
@@ -75,5 +90,7 @@ export async function handleSocketStartGame(this: SocketType) {
     return;
   }
 
+  game.started = true;
+  await RoomDao.setRoom(roomId, game);
   return roomId;
 }

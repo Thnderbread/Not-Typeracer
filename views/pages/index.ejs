@@ -9,41 +9,42 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/htmx.org@2.0.0" integrity="sha384-wS5l5IKJBvK6sPTKa2WZ1js3d947pvWXbPJ1OmWfEuxLgeHcEbjUUA5i9V5ZkpCw" crossorigin="anonymous">
   </script>
-  <script src="../scripts/startGame.js"></script>
   <script src="../scripts/copyToClipboard.js"></script>
+  <script src="../scripts/startGame.js"></script>
   <title>NotTyperacer</title>
 </head>
 
 <body>
-  <h1>Hello</h1>
-  <p>test</p>
+  <a href="/">
+    <h1 class="ml-2 mt-2 text-lg" onclick="">Home</h1>
+  </a>
   <div id="main">
-    <div id="error"></div>
+    <div id="error" class="max-w-12 rounded-md bg-pink-300 text-center text-red-600" hidden></div>
     <button class="rounded-md border-2 border-solid border-gray-700 p-1" hx-post="/api/rooms/create" hx-target="#main" hx-swap="outerHTML" hx-trigger="click" hx-debug="true">
       Create room
     </button>
-    <button class="rounded-md border-2 border-solid border-gray-700 p-1" onclick="alert('hey')">Connect!</button>
-    <button id="ping" class="rounded-md border-2 border-solid border-gray-700 p-1">Ping!</button>
     <div id="room"></div>
   </div>
 </body>
 <script>
-  // htmx.logAll();
   document.addEventListener("DOMContentLoaded", (event) => {
-    document.body.addEventListener("htmx:beforeSwap", (e) => {
-      if (e.detail.xhr.status === 422) {
-        e.detail.shouldSwap = true;
-        e.detail.isError = false;
-      }
-    });
-    const roomId = new URL(window.location.href).searchParams.get("room")
+    const url = new URL(window.location.href)
+    const roomId = url.searchParams.get("room")
     if (roomId) {
-      console.log("In room ept")
       htmx.ajax("POST", `/api/rooms/join/${roomId}`, {
         target: "#main",
         swap: "outerHTML"
-      });
+      })
     }
+    document.body.addEventListener("htmx:afterRequest", (e) => {
+      if (e.detail.xhr.status === 404) {
+        window.location.href = url.origin
+        alert("Room Not found.");
+      } else if (e.detail.xhr.status === 422) {
+        window.location.href = url.origin;
+        alert("Room is full or game is already in progress.");
+      }
+    })
   });
 </script>
 

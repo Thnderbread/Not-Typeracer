@@ -1,4 +1,3 @@
-import clsx from "clsx/lite";
 import RoomDao from "../helpers/roomDao";
 import setUserState from "../helpers/setUserState";
 import { Router, type Request, type Response } from "express";
@@ -7,20 +6,13 @@ import type { IGame, IPlayer } from "../types/game-interface";
 const router: Router = Router();
 
 router.post("/create", async (req: Request, res: Response) => {
-  console.log("Create ept hit");
   let playerId = req.playerId;
 
   if (req.roomId) {
-    console.log("The player is currently in a room.");
-
     res.setHeader("HX-Retarget", "#error");
     res.setHeader("HX-Reswap", "innerHTML");
 
-    return res
-      .status(422)
-      .send(
-        `<p class=${clsx("rounded-md border bg-pink-200 text-red-400")}>The player is currently in a room.</p>`
-      );
+    return res.sendStatus(422);
   } else if (!playerId) {
     playerId = setUserState(req, res, "playerId");
   }
@@ -36,17 +28,16 @@ router.post("/create", async (req: Request, res: Response) => {
     host: true,
     playerId,
   };
-  const text = `Lorem, ipsum dolor sit amet consectetur adipisicing elit. Quibusdam earum nihil doloremque saepe ipsum iusto, velit sequi facere! Dolor in numquam iure odit ipsam omnis eligendi, reprehenderit ipsum libero ex.`;
+  const text = "The text of the game is the game of the text!";
   const game: IGame = {
     text,
+    finished: 0,
     started: false,
     players: [host],
     joinLink: `?room=${roomId}`,
   };
   await RoomDao.setRoom(roomId, game);
 
-  // TODO: Get a text for the race. Maybe render it directly here?
-  // TODO: Also need a link for this room. Render it directly here? Maybe some host specific string to stop random people from joining?
   return res.render("partials/room", {
     joinLink: game.joinLink,
     players: game.players,
@@ -58,25 +49,16 @@ router.post("/create", async (req: Request, res: Response) => {
 router.get("/:roomId", async (req: Request, res: Response) => {
   const { roomId, playerId } = req;
 
-  if (!roomId || !playerId) {
-    console.warn(`Missing room: ${roomId} id or player id: ${playerId}`);
-    return res.sendStatus(400);
-  }
+  if (!roomId || !playerId) return res.sendStatus(400);
 
   const game = await RoomDao.getRoom(roomId);
-  if (!game) {
-    console.log("room not found.");
-    return res.sendStatus(404);
-  }
+  if (!game) return res.sendStatus(404);
 
   const currentPlayer = game.players.find(
     (player) => player.playerId === playerId
   );
 
-  if (!currentPlayer) {
-    console.log("Player not found: ", playerId);
-    return res.sendStatus(404);
-  }
+  if (!currentPlayer) return res.sendStatus(404);
 
   return res.render("partials/room", {
     joinLink: game.joinLink,
@@ -90,31 +72,15 @@ router.post("/join/:roomId", async (req: Request, res: Response) => {
   const { playerId } = req;
   const roomId = req.params["roomId"];
 
-  if (!roomId || !playerId) {
-    console.log(
-      `Either no room id: ${roomId} or no player id: ${playerId}. Unable to complete the request.`
-    );
-    return res.sendStatus(400);
-  }
+  if (!roomId || !playerId) return res.sendStatus(400);
 
   const game = await RoomDao.getRoom(roomId);
-  if (!game) {
-    console.log("room not found.");
-    return res.sendStatus(404);
-    // .render("room not found");
-  }
+  if (!game) return res.sendStatus(404);
 
   // also check if the race has started? probably set some started variable or something
-  if (game.players.length === 4) {
-    console.log("room is full.");
-    return res.sendStatus(422);
-    // .render("room is full.");
-  }
+  if (game.players.length === 4) return res.sendStatus(422);
 
-  if (game.started) {
-    console.log("Game is already in progress.");
-    return res.sendStatus(422);
-  }
+  if (game.started) return res.sendStatus(422);
 
   const chars = playerId.split("-");
   const playerSuffix = chars[chars.length - 1];
@@ -165,17 +131,11 @@ router.post("/:roomId/start", async (req: Request, res: Response) => {
     (player) => player.playerId === req.playerId
   );
 
-  if (!foundPlayer || !foundPlayer.host) {
-    console.log("Either couldn't find the player in this room: ", room.players);
-    console.log("Or this player is not the host: ");
-    return res.sendStatus(400);
-    // .render("sumn went wrong");
-  }
+  if (!foundPlayer || !foundPlayer.host) return res.sendStatus(400);
 
   room.started = true;
-  console.log("Found the player & started the game.");
   await RoomDao.setRoom(req.roomId, room);
-  return res.sendStatus(200);
+  return res.render("partials/game");
 });
 
 export default router;

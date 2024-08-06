@@ -23,13 +23,19 @@ function initSocketIoServer(httpServer: httpServer) {
 
   io.on("connection", (socket) => {
     socket.on("join", handleSocketJoin.bind(socket));
-    socket.on("incomingProgress", handleSocketIncomingProgress.bind(socket));
+    socket.on("incomingProgress", async (progressData) => {
+      const info = await handleSocketIncomingProgress.call(
+        socket,
+        progressData
+      );
+      if (!info) return;
+      io.to(progressData.roomId).emit("progressUpdate", info);
+    });
 
-    socket.on("disconnect", async (reason) => {
+    socket.on("disconnect", async () => {
       const roomId = await handleSocketDisconnect.call(socket);
 
       roomId && io.to(roomId).emit("roomChange");
-      console.log(`Socket disconnected: ${reason}`);
     });
 
     socket.on("startGame", async () => {

@@ -3,7 +3,7 @@ import type { IGame } from "../types/game-interface";
 import { type Redis as RedisType, Redis } from "ioredis";
 
 class RoomDao {
-  conn: RedisType | Map<string, string>;
+  private conn: RedisType | Map<string, string>;
   constructor(conn?: RedisType) {
     this.conn = conn ? conn : new Map<string, string>();
   }

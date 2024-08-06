@@ -1,10 +1,11 @@
-<script src="../scripts/socketHandlers.js"></script>
+<script type="module" src="../scripts/socketHandlers.js"></script>
 <div id="room" data-roomId="<%= joinLink.split("=")[1] %>" class="m-auto mt-14 h-fit w-8/12 rounded-md border-2 border-solid border-black bg-gray-800 p-4">
+  <div id="countdown-wpm" class="p-1 text-center text-lg">WPM: 0</div>
   <% if (currentPlayer.host) { %>
   <div class="flex flex-row justify-between">
-    <button class="border rounded-lg p-1 mb-1 bg-blue-600 text-white" id="copyLinkButton" onclick="copyJoinLinkToClipboard('<%= joinLink %>')" <%= players.length === 4 ? "disabled" : "" %> data-link="<%= joinLink %>">Copy Invite Link
+    <button id="copyLinkButton" class="border rounded-lg p-1 mb-1 bg-blue-600 hover:bg-green-600 text-white w-28" onclick="copyJoinLinkToClipboard('<%= joinLink %>')" <%= players.length === 4 ? "disabled" : "" %> data-link="<%= joinLink %>">Copy Invite Link
     </button>
-    <button class="border rounded-lg p-1 mb-1 min-w-2 bg-blue-600 text-white" onclick="startGame()" id="startButton">Start!
+    <button id="startButton" class="border rounded-lg mb-1 min-w-2 hover:bg-green-600 bg-blue-600 text-white text-lg w-28" onclick="startGame()">Start!
     </button>
   </div>
   <% } %>

@@ -20,4 +20,6 @@ export interface IGame {
   started: boolean;
   /** All players in the room */
   players: IPlayer[];
+  /** The number of players that have finished a race */
+  finished: number;
 }
