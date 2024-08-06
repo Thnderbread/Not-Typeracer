@@ -16,4 +16,4 @@ app.use("/api", getReqInfo, MainRouter);
 const httpServer = createServer(app);
 initSocketIoServer(httpServer);
 
-httpServer.listen(8000, "127.0.0.1", console.log);
+httpServer.listen(8000, "0.0.0.0", console.log);
